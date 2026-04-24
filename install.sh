@@ -10,6 +10,9 @@ pkg update -y && pkg upgrade -y
 pkg install -y python nodejs-lts starship git ncurses-utils
 
 # 2. Install Gemini CLI
+mkdir -p "$HOME/.gyp"
+printf "{'variables':{'android_ndk_path':''}}" > "$HOME/.gyp/include.gypi"
+
 if ! command -v gemini &> /dev/null; then
     echo "[*] Installing Gemini CLI..."
     npm install -g @google/gemini-cli
