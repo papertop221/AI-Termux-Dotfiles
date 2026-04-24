@@ -112,9 +112,15 @@ mkd() {
     mkdir -p "$@" && cd "$@"
 }
 
-# --- Welcome Banner ---
+# --- Welcome Banner (Golden Ratio Design) ---
 if [[ $- == *i* ]]; then
     clear
-    echo -e "\033[1;34m󰊭 AI Terminal\033[0m \033[0;30m|\033[0m \033[0;32m$(date +'%H:%M')\033[0m"
-    echo -e "\033[0;90mType naturally to interact...\033[0m\n"
+    local time=$(date +'%H:%M')
+    # Margin atas & Indentasi diatur untuk keseimbangan visual
+    echo -e ""
+    echo -e "  \033[1;34m▄▀█ █\033[0m"
+    echo -e "  \033[1;34m█▀█ █\033[0m  \033[1;30mTERMINAL\033[0m"
+    echo -e "  \033[0;90m───────────────\033[0m"
+    echo -e "  \033[0;32m$time\033[0m \033[0;90m| \033[0;36m󰊭 \033[0;90mReady to help...\033[0m"
+    echo -e ""
 fi
