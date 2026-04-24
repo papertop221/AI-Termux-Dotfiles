@@ -112,8 +112,9 @@ mkd() {
     mkdir -p "$@" && cd "$@"
 }
 
-# Simple banner
+# --- Welcome Banner ---
 if [[ $- == *i* ]]; then
-    echo -e "\n \033[1;34mWelcome to Terminal\033[0m"
-    echo -e " \033[0;32m$(date +'%A, %d %B %Y')\033[0m\n"
+    clear
+    echo -e "\033[1;34m󰊭 AI Terminal\033[0m \033[0;30m|\033[0m \033[0;32m$(date +'%H:%M')\033[0m"
+    echo -e "\033[0;90mType naturally to interact...\033[0m\n"
 fi
