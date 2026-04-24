@@ -1,5 +1,5 @@
 # Starship Tokyo Night Minimalist
-format = """$directory$git_branch$git_status$python$character"""
+format = """$directory$git_branch$git_status$character"""
 
 [directory]
 style = "bold blue"
@@ -12,10 +12,6 @@ style = "bold purple"
 
 [git_status]
 style = "bold red"
-
-[python]
-symbol = " "
-style = "bold yellow"
 
 [character]
 success_symbol = "[󰄾](bold green) "
