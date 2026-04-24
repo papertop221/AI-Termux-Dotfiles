@@ -115,7 +115,7 @@ mkd() {
 # --- Welcome Banner (Golden Ratio Design) ---
 if [[ $- == *i* ]]; then
     clear
-    local time=$(date +'%H:%M')
+    time=$(date +'%H:%M')
     # Margin atas & Indentasi diatur untuk keseimbangan visual
     echo -e ""
     echo -e "  \033[1;34m▄▀█ █\033[0m"
