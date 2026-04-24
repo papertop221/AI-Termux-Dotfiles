@@ -89,7 +89,7 @@ command_not_found_handle() {
         echo "$cmd" > "$AI_EXEC_FILE"
     elif [[ "$output" == CHAT:* ]]; then
         local text="${output#CHAT: }"
-        echo -e "\033[1;34mAI:\033[0m $text"
+        echo -e "$text"
     fi
 }
 

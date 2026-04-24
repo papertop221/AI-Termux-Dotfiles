@@ -47,18 +47,23 @@ User: {user_input}"""
         )
         response = proc.stdout.strip()
         
-        # Bersihkan output dari header gemini jika ada
-        lines = [line for line in response.split('\n') if not line.startswith('[') and line.strip()]
-        clean_response = " ".join(lines).strip()
-
-        if clean_response.startswith("EXEC:") or clean_response.startswith("CHAT:"):
-            print(clean_response)
+        # Ambil hanya baris terakhir yang mengandung EXEC: atau CHAT:
+        final_line = ""
+        for line in reversed(response.split('\n')):
+            if line.startswith("EXEC:") or line.startswith("CHAT:"):
+                final_line = line
+                break
+        
+        if final_line:
+            print(final_line)
             # Simpan history
-            history.append({"u": user_input, "a": clean_response})
+            history.append({"u": user_input, "a": final_line})
             save_history(history)
         else:
-            # Fallback jika AI bingung
-            print(f"CHAT: {clean_response}")
+            # Jika tidak ada prefix, anggap itu CHAT murni
+            # Tapi bersihkan dulu dari baris progress gemini
+            clean_lines = [l for l in response.split('\n') if not l.startswith('[') and l.strip()]
+            print(f"CHAT: {' '.join(clean_lines)}")
             
     except Exception as e:
         print(f"CHAT: Error: {str(e)}")
