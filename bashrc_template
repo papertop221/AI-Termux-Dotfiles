@@ -112,15 +112,19 @@ mkd() {
     mkdir -p "$@" && cd "$@"
 }
 
-# --- Welcome Banner (Golden Ratio Design) ---
+# --- Welcome Banner (Elite Golden Ratio) ---
 if [[ $- == *i* ]]; then
     clear
     time=$(date +'%H:%M')
-    # Margin atas & Indentasi diatur untuk keseimbangan visual
+    user=$(whoami)
+    os="Android $(getprop ro.build.version.release)"
+    uptime=$(uptime -p | sed 's/up //')
+    
     echo -e ""
-    echo -e "  \033[1;34m▄▀█ █\033[0m"
-    echo -e "  \033[1;34m█▀█ █\033[0m  \033[1;30mTERMINAL\033[0m"
-    echo -e "  \033[0;90m───────────────\033[0m"
-    echo -e "  \033[0;32m$time\033[0m \033[0;90m| \033[0;36m󰊭 \033[0;90mReady to help...\033[0m"
+    echo -e "  \033[1;34m▄▀█ █\033[0m   \033[1;30mUSER \033[0;90m:\033[0m \033[0;37m$user\033[0m"
+    echo -e "  \033[1;34m█▀█ █\033[0m   \033[1;30mOS   \033[0;90m:\033[0m \033[0;37m$os\033[0m"
+    echo -e "  \033[0;90m──────   ────────────────────\033[0m"
+    echo -e "  \033[0;32m$time\033[0m \033[0;90m| \033[0;36m󰊭 \033[0;90mUP \033[0;37m$uptime\033[0m"
+    echo -e "  \033[0;90mReady to interact...\033[0m"
     echo -e ""
 fi
