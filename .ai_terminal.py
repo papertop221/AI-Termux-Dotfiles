@@ -17,7 +17,8 @@ def load_history():
 
 def save_history(history):
     with open(HISTORY_FILE, "w") as f:
-        json.dump(history[-10:], f, indent=2)
+        # Simpan hanya 3 history terakhir untuk kecepatan maksimal
+        json.dump(history[-3:], f, indent=2)
 
 def main():
     user_input = " ".join(sys.argv[1:])
@@ -25,45 +26,41 @@ def main():
         return
 
     history = load_history()
+    h_ctx = "\n".join([f"U:{h['u']}\nA:{h['a']}" for h in history])
     
-    # Buat prompt dengan konteks
-    history_context = "\n".join([f"User: {h['u']}\nAI: {h['a']}" for h in history])
-    
-    system_prompt = f"""You are an AI Terminal Agent. 
-Current Directory: {os.getcwd()}
-History:
-{history_context}
+    # Prompt minimalis untuk mengurangi latency pemrosesan
+    prompt = f"Dir:{os.getcwd()}\n{h_ctx}\nIn:{user_input}\nOut: EXEC: <cmd> OR CHAT: <msg>"
 
-If the user wants to perform a task, output ONLY 'EXEC: <bash command>'.
-If the user is asking a question or just chatting, output 'CHAT: <your response>'.
-NO Markdown. NO explanations. Silence is golden.
-User: {user_input}"""
-
-    # Panggil gemini
     try:
+        # Gunakan --output-format text agar tidak streaming (lebih cepat untuk headless)
         proc = subprocess.run(
-            ["gemini", "--approval-mode", "yolo", "-p", system_prompt],
+            ["gemini", "--approval-mode", "yolo", "--output-format", "text", "-p", prompt],
             capture_output=True, text=True
         )
         response = proc.stdout.strip()
         
-        # Ambil hanya baris terakhir yang mengandung EXEC: atau CHAT:
         final_line = ""
+        # Ambil baris jawaban terakhir
         for line in reversed(response.split('\n')):
-            if line.startswith("EXEC:") or line.startswith("CHAT:"):
-                final_line = line
+            if "EXEC:" in line or "CHAT:" in line:
+                # Bersihkan sisa-sisa markdown atau simbol jika ada
+                final_line = line.strip().replace("`", "")
                 break
         
         if final_line:
-            print(final_line)
-            # Simpan history
-            history.append({"u": user_input, "a": final_line})
-            save_history(history)
+            # Pastikan prefix benar
+            if final_line.startswith("EXEC:") or final_line.startswith("CHAT:"):
+                print(final_line)
+                history.append({"u": user_input, "a": final_line})
+                save_history(history)
+            else:
+                # Jika prefix hilang tapi ada konten, paksa CHAT
+                print(f"CHAT: {final_line}")
         else:
-            # Jika tidak ada prefix, anggap itu CHAT murni
-            # Tapi bersihkan dulu dari baris progress gemini
-            clean_lines = [l for l in response.split('\n') if not l.startswith('[') and l.strip()]
-            print(f"CHAT: {' '.join(clean_lines)}")
+            # Fallback
+            clean = " ".join([l for l in response.split('\n') if not l.startswith('[') and l.strip()])
+            if clean:
+                print(f"CHAT: {clean}")
             
     except Exception as e:
         print(f"CHAT: Error: {str(e)}")
