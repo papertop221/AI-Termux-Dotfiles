@@ -1,0 +1,119 @@
+# Minimalist & Elegant Bash Config
+
+# Starship Prompt
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init bash)"
+fi
+
+# FZF Integration (Fuzzy Finder)
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+# --- Aliases ---
+
+# Modern replacements
+if command -v eza >/dev/null 2>&1; then
+    alias ls='eza --icons --group-directories-first'
+    alias ll='eza -lh --icons --group-directories-first'
+    alias la='eza -a --icons --group-directories-first'
+    alias lt='eza --tree --icons'
+else
+    alias ll='ls -lh'
+    alias la='ls -A'
+fi
+alias cat='bat --theme="Dracula"'
+
+# Shortcuts
+alias cl='clear'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias q='exit'
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit -m'
+alias gp='git push'
+alias gd='git diff'
+alias py='python'
+# AI Terminal Features
+unalias ai 2>/dev/null
+ai() {
+    if [ $# -eq 0 ]; then
+        gemini --approval-mode yolo 2> >(grep -v "YOLO mode is enabled" >&2)
+    else
+        gemini --approval-mode yolo -p "$*" 2> >(grep -v "YOLO mode is enabled" >&2)
+    fi
+}
+
+unalias tanya 2>/dev/null
+tanya() {
+    local konteks=$(ls -F | head -n 15)
+    gemini --approval-mode yolo -p "Folder: $PWD. Files: $konteks. Q: $*" 2> >(grep -v "YOLO mode is enabled" >&2)
+}
+
+unalias kenapa 2>/dev/null
+kenapa() {
+    local last_status=$?
+    if [ $last_status -eq 0 ]; then
+        echo "Perintah terakhir sukses. Tidak ada error untuk dijelaskan."
+        return
+    fi
+    history -a
+    # Gunakan fc untuk list history jika di shell interaktif
+    local last_cmd=$(history 2 | head -n 1 | sed 's/^[ ]*[0-9]*[ ]*//')
+    if [ -z "$last_cmd" ]; then
+        last_cmd="[unknown command]"
+    fi
+    echo "Menganalisis error dari: $last_cmd"
+    gemini --yolo -p "Jelaskan kenapa perintah '$last_cmd' error (exit code: $last_status) dan berikan solusinya"
+}
+
+# --- Utils ---
+alias reload='source ~/.bashrc'
+alias path='echo -e "${PATH//:/\\n}"'
+alias h='history | fzf'
+
+# --- Functions ---
+
+# AI Natural Language Terminal Handler
+AI_EXEC_FILE="$HOME/.ai_execute"
+AI_CORE="$HOME/.ai_terminal.py"
+
+command_not_found_handle() {
+    local input="$*"
+    
+    # Jalankan core AI
+    local output=$($AI_CORE "$input")
+    
+    if [[ "$output" == EXEC:* ]]; then
+        local cmd="${output#EXEC: }"
+        # Eksekusi tanpa print command (silent)
+        echo "$cmd" > "$AI_EXEC_FILE"
+    elif [[ "$output" == CHAT:* ]]; then
+        local text="${output#CHAT: }"
+        echo -e "\033[1;34mAI:\033[0m $text"
+    fi
+}
+
+# Mekanisme eksekusi di shell utama (untuk cd dll)
+ai_post_exec() {
+    if [ -f "$AI_EXEC_FILE" ]; then
+        local cmd=$(cat "$AI_EXEC_FILE")
+        rm "$AI_EXEC_FILE"
+        eval "$cmd"
+    fi
+}
+
+# Masukkan ke PROMPT_COMMAND
+if [[ "$PROMPT_COMMAND" != *ai_post_exec* ]]; then
+    PROMPT_COMMAND="ai_post_exec;$PROMPT_COMMAND"
+fi
+
+# Create a dir and move into it
+mkd() {
+    mkdir -p "$@" && cd "$@"
+}
+
+# Simple banner
+if [[ $- == *i* ]]; then
+    echo -e "\n \033[1;34mWelcome to Terminal\033[0m"
+    echo -e " \033[0;32m$(date +'%A, %d %B %Y')\033[0m\n"
+fi
