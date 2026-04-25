@@ -1,228 +1,47 @@
-# Minimalist & Elegant Bash Config
+# --- PURE AI AGENT TERMINAL ---
 
-# Starship Prompt
+# Starship Prompt (Keep it for minimal UI)
 if command -v starship >/dev/null 2>&1; then
     eval "$(starship init bash)"
 fi
 
-# FZF Integration (Fuzzy Finder)
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
-
-# --- Aliases ---
-
-# Modern replacements
-if command -v eza >/dev/null 2>&1; then
-    alias ls='eza --icons --group-directories-first'
-    alias ll='eza -lh --icons --group-directories-first'
-    alias la='eza -a --icons --group-directories-first'
-    alias lt='eza --tree --icons'
-else
-    alias ll='ls -lh'
-    alias la='ls -A'
-fi
-alias cat='bat --theme="Dracula"'
-
-# Shortcuts
-alias cl='clear'
-alias ..='cd ..'
-alias ...='cd ../..'
-alias q='exit'
-alias gs='git status'
-alias ga='git add'
-alias gc='git commit -m'
-alias gp='git push'
-alias gd='git diff'
-alias py='python'
-
-# Network Info
-alias ip='echo -e "Lokal: $(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk "{print \$2}")\nPublik: $(curl -s ifconfig.me)"'
-# AI Terminal Features
-unalias ai 2>/dev/null
-ai() {
-    if [ $# -eq 0 ]; then
-        gemini --approval-mode yolo 2> >(grep -v "YOLO mode is enabled" >&2)
-    else
-        gemini --approval-mode yolo -p "$*" 2> >(grep -v "YOLO mode is enabled" >&2)
-    fi
-}
-
-unalias tanya 2>/dev/null
-tanya() {
-    local konteks=$(ls -F | head -n 15)
-    gemini --approval-mode yolo -p "Folder: $PWD. Files: $konteks. Q: $*" 2> >(grep -v "YOLO mode is enabled" >&2)
-}
-
-unalias kenapa 2>/dev/null
-kenapa() {
-    local last_status=$?
-    if [ $last_status -eq 0 ]; then
-        echo "Perintah terakhir sukses. Tidak ada error untuk dijelaskan."
-        return
-    fi
-    history -a
-    # Gunakan fc untuk list history jika di shell interaktif
-    local last_cmd=$(history 2 | head -n 1 | sed 's/^[ ]*[0-9]*[ ]*//')
-    if [ -z "$last_cmd" ]; then
-        last_cmd="[unknown command]"
-    fi
-    echo "Menganalisis error dari: $last_cmd"
-    gemini --yolo -p "Jelaskan kenapa perintah '$last_cmd' error (exit code: $last_status) dan berikan solusinya"
-}
-
-# --- Utils ---
-alias reload='source ~/.bashrc'
-alias path='echo -e "${PATH//:/\\n}"'
-alias h='history | fzf'
-
-# --- Functions ---
-
-# AI Terminal Handler
+# Core Agent Paths
 AI_EXEC_FILE="$HOME/.ai_execute"
 AI_CORE="$HOME/.ai_terminal.py"
-
-# Track last command and exit status
 LAST_CMD=""
-LAST_STATUS=0
-AI_FIX_FILE="$HOME/.ai_fix"
 
-# Hook untuk mencatat perintah terakhir
+# Capture every command for context
 trap 'LAST_CMD=$BASH_COMMAND' DEBUG
 
-# Fungsi Perbaikan Instan
-alias f='ai_fix_last'
-ai_fix_last() {
-    if [ -f "$AI_FIX_FILE" ]; then
-        local fix_cmd=$(cat "$AI_FIX_FILE")
-        rm -f "$AI_FIX_FILE"
-        echo -e "\033[0;90m> $fix_cmd\033[0m"
-        eval "$fix_cmd"
-    else
-        echo "Tidak ada saran perbaikan."
-    fi
-}
-
+# Catch-all Handler (The Brain Hook)
 command_not_found_handle() {
-    local status=$? 
+    local status=$?
     local input="$*"
-
-    echo -e "\033[0;90m[AI Translating...]\033[0m"
-    # Jalankan core AI
+    
+    # Langsung panggil Agent
     local output=$($AI_CORE "$input" "$LAST_CMD" "$status")
-
+    
     if [[ "$output" == EXEC:* ]]; then
         local cmd="${output#EXEC: }"
         echo "$cmd" > "$AI_EXEC_FILE"
-    elif [[ "$output" == FIX:* ]]; then
-        local fix_cmd="${output#FIX: }"
-        echo "$fix_cmd" > "$AI_FIX_FILE"
-        echo -e "\033[1;33m💡 AI Auto-Fix:\033[0m \033[1;37m$fix_cmd\033[0m \033[0;90m(Ketik 'f' untuk eksekusi)\033[0m"
-    elif [[ "$output" == CHAT:* ]]; then
-        local text="${output#CHAT: }"
-        echo -e "$text"
     else
         echo -e "$output"
     fi
     return 127
 }
 
-# Fungsi Daftar Kekuatan AI (Fitur)
-fitur() {
-    clear
-    echo -e "  \033[1;34m󰊭 DAFTAR KEKUATAN AI TERMINAL\033[0m"
-    echo -e "  \033[0;90m──────────────────────────────\033[0m"
-    echo -e "  \033[1;32m1. Natural Interface\033[0m : Ketik apa saja, AI akan eksekusi/jawab."
-    echo -e "  \033[1;32m2. Auto-Healing\033[0m      : AI otomatis perbaiki error (Otonom)."
-    echo -e "  \033[1;32m3. Silent State\033[0m      : 'cd' & env changes langsung di shell utama."
-    echo -e "  \033[1;32m4. Elite Dashboard\033[0m   : Tampilan Golden Ratio (RAM, Disk, Uptime)."
-    echo -e ""
-    echo -e "  \033[1;36mPERINTAH TAMBAHAN:\033[0m"
-    echo -e "  \033[1;37m- f         \033[0m : Jalankan saran perbaikan manual."
-    echo -e "  \033[1;37m- tanya <q> \033[0m : Tanya AI tentang isi folder saat ini."
-    echo -e "  \033[1;37m- kenapa    \033[0m : Analisis mendalam kenapa perintah gagal."
-    echo -e "  \033[1;37m- cari <q>  \033[0m : Browsing internet lewat mata AI."
-    echo -e "  \033[1;37m- update-all\033[0m : Update pkg, npm, dan pip sekaligus."
-    echo -e "  \033[1;37m- reload    \033[0m : Refresh otak terminal (.bashrc)."
-    echo -e "  \033[0;90m──────────────────────────────\033[0m"
-}
-
-# Mekanisme eksekusi proaktif di shell utama
-ai_proactive_monitor() {
+# Pure Autonomous Execution Loop
+ai_agent_loop() {
     local status=$?
-    
-    # 1. Eksekusi antrean perintah AI (Normal)
     if [ -f "$AI_EXEC_FILE" ]; then
         local cmd=$(cat "$AI_EXEC_FILE")
         rm -f "$AI_EXEC_FILE"
-        echo -e "\033[0;90m[Executing: $cmd]\033[0m"
         eval "$cmd"
-        status=$?
     fi
-
-    # 2. Omniscient Guardian (Analisis error proaktif)
-    if [ $status -ne 0 ] && [ $status -ne 130 ] && [ $status -ne 127 ]; then
-        local real_cmd=$(history 1 | sed 's/^[ ]*[0-9]*[ ]*//')
-        if [[ "$real_cmd" != "f" ]] && [[ "$real_cmd" != *"ai_fix_last"* ]]; then
-            echo -e "\033[0;90m[AI Thinking...]\033[0m"
-            local output=$($AI_CORE "[AUTO_ERROR_CHECK]" "$real_cmd" "$status")
-            
-            if [[ "$output" == AUTO_FIX:* ]]; then
-                local fix_cmd="${output#AUTO_FIX: }"
-                echo -e "\033[1;32m🔧 Auto-Healing:\033[0m \033[1;37m$fix_cmd\033[0m"
-                eval "$fix_cmd"
-            elif [[ "$output" == FIX:* ]]; then
-                local fix_cmd="${output#FIX: }"
-                echo "$fix_cmd" > "$AI_FIX_FILE"
-                echo -e "\033[1;33m💡 Solusi AI:\033[0m \033[1;37m$fix_cmd\033[0m \033[0;90m(Ketik 'f' untuk eksekusi)\033[0m"
-            fi
-        fi
-    fi
-    return $status
 }
 
-# Masukkan ke PROMPT_COMMAND
-if [[ "$PROMPT_COMMAND" != *ai_proactive_monitor* ]]; then
-    PROMPT_COMMAND="ai_proactive_monitor;$PROMPT_COMMAND"
-fi
+PROMPT_COMMAND="ai_agent_loop"
 
-# Create a dir and move into it
-mkd() {
-    mkdir -p "$@" && cd "$@"
-}
-
-# --- Welcome Banner (Elite Golden Ratio) ---
-if [[ $- == *i* ]]; then
-    clear
-    time=$(date +'%H:%M')
-    user=$(whoami)
-    os="Android $(getprop ro.build.version.release)"
-    uptime=$(uptime -p | sed 's/up //')
-    
-    # Get stats
-    storage=$(df -h /data/data/com.termux/files/home | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}')
-    memory=$(free -m | awk 'NR==2 {printf "%.0f/%.0fMB", $3, $2}')
-
-    echo -e ""
-    echo -e "  \033[1;34m▄▀█ █\033[0m   \033[1;30mUSER \033[0;90m:\033[0m \033[0;37m$user\033[0m"
-    echo -e "  \033[1;34m█▀█ █\033[0m   \033[1;30mOS   \033[0;90m:\033[0m \033[0;37m$os\033[0m"
-    echo -e "  \033[1;34m█\033[0m  \033[1;34m█ █\033[0m   \033[1;30mRAM  \033[0;90m:\033[0m \033[0;37m$memory\033[0m"
-    echo -e "  \033[1;34m█\033[0m  \033[1;34m█ █\033[0m   \033[1;30mDISK \033[0;90m:\033[0m \033[0;37m$storage\033[0m"
-    echo -e "  \033[0;90m──────   ────────────────────\033[0m"
-    echo -e "  \033[0;32m$time\033[0m \033[0;90m| \033[0;36m󰊭 \033[0;90mUP \033[0;37m$uptime\033[0m"
-    echo -e "  \033[0;90mReady to interact...\033[0m"
-    echo -e ""
-fi
-
-# --- New Features ---
-update-all() {
-    echo -e "\033[1;34mUpdating packages...\033[0m"
-    pkg update && pkg upgrade -y
-    echo -e "\033[1;34mUpdating npm global...\033[0m"
-    npm update -g
-    echo -e "\033[1;34mUpdating pip packages...\033[0m"
-    pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1 | xargs -n1 pip install -U
-    echo -e "\033[1;32mDone.\033[0m"
-}
-
-cari() {
-    gemini --yolo -p "Search web for: $*"
-}
+# Simple Welcome
+clear
+echo -e "\033[1;30m[ PURE AI AGENT MODE ACTIVE ]\033[0m"
