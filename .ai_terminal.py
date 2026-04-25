@@ -28,18 +28,17 @@ def main():
     history = load_history()
     h_ctx = "\n".join([f"U:{h['u']}\nA:{h['a']}" for h in history])
     
-    # System Prompt yang lebih Agentic & Autonomous
     prompt = (
-        f"You are an Autonomous Terminal Agent.\n"
+        f"You are a Proactive Terminal Guardian.\n"
         f"Dir: {os.getcwd()}\n"
         f"LastCmd: '{last_cmd}' (Exit:{last_status})\n"
-        f"Recent:\n{h_ctx}\n\n"
-        f"User Input: {user_input}\n\n"
-        f"Instructions:\n"
-        f"1. If LastCmd failed, proactively offer a fix.\n"
-        f"2. For multi-step tasks, chain commands with &&.\n"
-        f"3. Output ONLY 'EXEC: <bash>' or 'CHAT: <text>'. No markdown.\n"
-        f"4. If you need to see file content to answer, use EXEC with cat/ls."
+        f"Context:\n{h_ctx}\n\n"
+        f"User: {user_input}\n\n"
+        f"Task:\n"
+        f"1. If LastCmd failed and user asks 'why' or 'fix', output 'FIX: <bash command>'.\n"
+        f"2. If user wants a task, output 'EXEC: <bash command>'.\n"
+        f"3. Else, output 'CHAT: <response>'.\n"
+        f"4. Be terse. NO markdown."
     )
 
     try:
@@ -51,7 +50,7 @@ def main():
         
         final_line = ""
         for line in reversed(response.split('\n')):
-            if "EXEC:" in line or "CHAT:" in line:
+            if any(p in line for p in ["EXEC:", "CHAT:", "FIX:"]):
                 final_line = line.strip().replace("`", "")
                 break
         

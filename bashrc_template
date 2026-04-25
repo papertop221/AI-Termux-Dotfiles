@@ -83,26 +83,42 @@ AI_CORE="$HOME/.ai_terminal.py"
 # Track last command and exit status
 LAST_CMD=""
 LAST_STATUS=0
+AI_FIX_FILE="$HOME/.ai_fix"
 
 # Hook untuk mencatat perintah terakhir
 trap 'LAST_CMD=$BASH_COMMAND' DEBUG
 
+# Fungsi Perbaikan Instan
+alias f='ai_fix_last'
+ai_fix_last() {
+    if [ -f "$AI_FIX_FILE" ]; then
+        local fix_cmd=$(cat "$AI_FIX_FILE")
+        rm "$AI_FIX_FILE"
+        eval "$fix_cmd"
+    else
+        echo "Tidak ada saran perbaikan."
+    fi
+}
+
 command_not_found_handle() {
-    LAST_STATUS=$? # Tangkap status sebelum AI jalan
+    LAST_STATUS=$? 
     local input="$*"
 
-    # Jalankan core AI dengan konteks tambahan
+    # Jalankan core AI
     local output=$($AI_CORE "$input" "$LAST_CMD" "$LAST_STATUS")
 
     if [[ "$output" == EXEC:* ]]; then
         local cmd="${output#EXEC: }"
         echo "$cmd" > "$AI_EXEC_FILE"
+    elif [[ "$output" == FIX:* ]]; then
+        local fix_cmd="${output#FIX: }"
+        echo "$fix_cmd" > "$AI_FIX_FILE"
+        echo -e "\033[1;33mAI menyarankan perbaikan. Ketik 'f' untuk eksekusi.\033[0m"
     elif [[ "$output" == CHAT:* ]]; then
         local text="${output#CHAT: }"
         echo -e "$text"
     fi
 }
-
 # Mekanisme eksekusi di shell utama (untuk cd dll)
 ai_post_exec() {
     if [ -f "$AI_EXEC_FILE" ]; then
