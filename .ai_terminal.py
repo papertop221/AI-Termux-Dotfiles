@@ -28,18 +28,27 @@ def main():
     history = load_history()
     h_ctx = "\n".join([f"U:{h['u']}\nA:{h['a']}" for h in history])
     
-    prompt = (
-        f"You are a Proactive Terminal Guardian.\n"
-        f"Dir: {os.getcwd()}\n"
-        f"LastCmd: '{last_cmd}' (Exit:{last_status})\n"
-        f"Context:\n{h_ctx}\n\n"
-        f"User: {user_input}\n\n"
-        f"Task:\n"
-        f"1. If LastCmd failed and user asks 'why' or 'fix', output 'FIX: <bash command>'.\n"
-        f"2. If user wants a task, output 'EXEC: <bash command>'.\n"
-        f"3. Else, output 'CHAT: <response>'.\n"
-        f"4. Be terse. NO markdown."
-    )
+    if user_input == "[AUTO_ERROR_CHECK]":
+        prompt = (
+            f"You are an Omniscient Terminal Guardian.\n"
+            f"Dir: {os.getcwd()}\n"
+            f"Failed Command: '{last_cmd}' (Exit Code: {last_status})\n"
+            f"Task: The user's last command failed. Provide the corrected command to fix it.\n"
+            f"Output ONLY 'FIX: <corrected bash command>'. NO explanation, NO markdown."
+        )
+    else:
+        prompt = (
+            f"You are a Proactive Terminal Guardian.\n"
+            f"Dir: {os.getcwd()}\n"
+            f"LastCmd: '{last_cmd}' (Exit:{last_status})\n"
+            f"Context:\n{h_ctx}\n\n"
+            f"User: {user_input}\n\n"
+            f"Task:\n"
+            f"1. If LastCmd failed and user asks 'why' or 'fix', output 'FIX: <bash command>'.\n"
+            f"2. If user wants a task, output 'EXEC: <bash command>'.\n"
+            f"3. Else, output 'CHAT: <response>'.\n"
+            f"4. Be terse. NO markdown."
+        )
 
     try:
         proc = subprocess.run(

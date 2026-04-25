@@ -93,7 +93,8 @@ alias f='ai_fix_last'
 ai_fix_last() {
     if [ -f "$AI_FIX_FILE" ]; then
         local fix_cmd=$(cat "$AI_FIX_FILE")
-        rm "$AI_FIX_FILE"
+        rm -f "$AI_FIX_FILE"
+        echo -e "\033[0;90m> $fix_cmd\033[0m"
         eval "$fix_cmd"
     else
         echo "Tidak ada saran perbaikan."
@@ -101,11 +102,12 @@ ai_fix_last() {
 }
 
 command_not_found_handle() {
-    LAST_STATUS=$? 
+    local status=$? 
     local input="$*"
 
+    echo -e "\033[0;90m[AI Translating...]\033[0m"
     # Jalankan core AI
-    local output=$($AI_CORE "$input" "$LAST_CMD" "$LAST_STATUS")
+    local output=$($AI_CORE "$input" "$LAST_CMD" "$status")
 
     if [[ "$output" == EXEC:* ]]; then
         local cmd="${output#EXEC: }"
@@ -113,24 +115,48 @@ command_not_found_handle() {
     elif [[ "$output" == FIX:* ]]; then
         local fix_cmd="${output#FIX: }"
         echo "$fix_cmd" > "$AI_FIX_FILE"
-        echo -e "\033[1;33mAI menyarankan perbaikan. Ketik 'f' untuk eksekusi.\033[0m"
+        echo -e "\033[1;33m💡 AI Auto-Fix:\033[0m \033[1;37m$fix_cmd\033[0m \033[0;90m(Ketik 'f' untuk eksekusi)\033[0m"
     elif [[ "$output" == CHAT:* ]]; then
         local text="${output#CHAT: }"
         echo -e "$text"
+    else
+        echo -e "$output"
     fi
+    return 127
 }
-# Mekanisme eksekusi di shell utama (untuk cd dll)
-ai_post_exec() {
+
+# Mekanisme eksekusi proaktif di shell utama
+ai_proactive_monitor() {
+    local status=$?
+    
+    # 1. Eksekusi antrean perintah AI
     if [ -f "$AI_EXEC_FILE" ]; then
         local cmd=$(cat "$AI_EXEC_FILE")
-        rm "$AI_EXEC_FILE"
+        rm -f "$AI_EXEC_FILE"
+        echo -e "\033[0;90m> $cmd\033[0m"
         eval "$cmd"
+        status=$?
     fi
+
+    # 2. Omniscient Guardian (Analisis error proaktif tanpa diminta)
+    if [ $status -ne 0 ] && [ $status -ne 130 ] && [ $status -ne 127 ]; then
+        local real_cmd=$(history 1 | sed 's/^[ ]*[0-9]*[ ]*//')
+        if [[ "$real_cmd" != "f" ]] && [[ "$real_cmd" != *"ai_fix_last"* ]]; then
+            echo -e "\033[0;90m[AI Analyzing Error $status...]\033[0m"
+            local output=$($AI_CORE "[AUTO_ERROR_CHECK]" "$real_cmd" "$status")
+            if [[ "$output" == FIX:* ]]; then
+                local fix_cmd="${output#FIX: }"
+                echo "$fix_cmd" > "$AI_FIX_FILE"
+                echo -e "\033[1;33m💡 Solusi AI:\033[0m \033[1;37m$fix_cmd\033[0m \033[0;90m(Ketik 'f' untuk eksekusi)\033[0m"
+            fi
+        fi
+    fi
+    return $status
 }
 
 # Masukkan ke PROMPT_COMMAND
-if [[ "$PROMPT_COMMAND" != *ai_post_exec* ]]; then
-    PROMPT_COMMAND="ai_post_exec;$PROMPT_COMMAND"
+if [[ "$PROMPT_COMMAND" != *ai_proactive_monitor* ]]; then
+    PROMPT_COMMAND="ai_proactive_monitor;$PROMPT_COMMAND"
 fi
 
 # Create a dir and move into it
