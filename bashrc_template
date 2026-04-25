@@ -33,6 +33,9 @@ alias gc='git commit -m'
 alias gp='git push'
 alias gd='git diff'
 alias py='python'
+
+# Network Info
+alias ip='echo -e "Lokal: $(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk "{print \$2}")\nPublik: $(curl -s ifconfig.me)"'
 # AI Terminal Features
 unalias ai 2>/dev/null
 ai() {
@@ -73,19 +76,26 @@ alias h='history | fzf'
 
 # --- Functions ---
 
-# AI Natural Language Terminal Handler
+# AI Terminal Handler
 AI_EXEC_FILE="$HOME/.ai_execute"
 AI_CORE="$HOME/.ai_terminal.py"
 
+# Track last command and exit status
+LAST_CMD=""
+LAST_STATUS=0
+
+# Hook untuk mencatat perintah terakhir
+trap 'LAST_CMD=$BASH_COMMAND' DEBUG
+
 command_not_found_handle() {
+    LAST_STATUS=$? # Tangkap status sebelum AI jalan
     local input="$*"
-    
-    # Jalankan core AI
-    local output=$($AI_CORE "$input")
-    
+
+    # Jalankan core AI dengan konteks tambahan
+    local output=$($AI_CORE "$input" "$LAST_CMD" "$LAST_STATUS")
+
     if [[ "$output" == EXEC:* ]]; then
         local cmd="${output#EXEC: }"
-        # Eksekusi tanpa print command (silent)
         echo "$cmd" > "$AI_EXEC_FILE"
     elif [[ "$output" == CHAT:* ]]; then
         local text="${output#CHAT: }"
@@ -120,11 +130,32 @@ if [[ $- == *i* ]]; then
     os="Android $(getprop ro.build.version.release)"
     uptime=$(uptime -p | sed 's/up //')
     
+    # Get stats
+    storage=$(df -h /data/data/com.termux/files/home | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}')
+    memory=$(free -m | awk 'NR==2 {printf "%.0f/%.0fMB", $3, $2}')
+
     echo -e ""
     echo -e "  \033[1;34m▄▀█ █\033[0m   \033[1;30mUSER \033[0;90m:\033[0m \033[0;37m$user\033[0m"
     echo -e "  \033[1;34m█▀█ █\033[0m   \033[1;30mOS   \033[0;90m:\033[0m \033[0;37m$os\033[0m"
+    echo -e "  \033[1;34m█\033[0m  \033[1;34m█ █\033[0m   \033[1;30mRAM  \033[0;90m:\033[0m \033[0;37m$memory\033[0m"
+    echo -e "  \033[1;34m█\033[0m  \033[1;34m█ █\033[0m   \033[1;30mDISK \033[0;90m:\033[0m \033[0;37m$storage\033[0m"
     echo -e "  \033[0;90m──────   ────────────────────\033[0m"
     echo -e "  \033[0;32m$time\033[0m \033[0;90m| \033[0;36m󰊭 \033[0;90mUP \033[0;37m$uptime\033[0m"
     echo -e "  \033[0;90mReady to interact...\033[0m"
     echo -e ""
 fi
+
+# --- New Features ---
+update-all() {
+    echo -e "\033[1;34mUpdating packages...\033[0m"
+    pkg update && pkg upgrade -y
+    echo -e "\033[1;34mUpdating npm global...\033[0m"
+    npm update -g
+    echo -e "\033[1;34mUpdating pip packages...\033[0m"
+    pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1 | xargs -n1 pip install -U
+    echo -e "\033[1;32mDone.\033[0m"
+}
+
+cari() {
+    gemini --yolo -p "Search web for: $*"
+}
