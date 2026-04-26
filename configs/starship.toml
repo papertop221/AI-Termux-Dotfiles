@@ -1,0 +1,23 @@
+# Starship Minimalist Config for Termux AI
+format = """
+$directory\
+$git_branch\
+$git_status\
+$character
+"""
+
+[directory]
+style = "bold cyan"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+
+[git_branch]
+symbol = " "
+style = "bold lavender"
+
+[git_status]
+style = "bold red"
