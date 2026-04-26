@@ -1,23 +1,51 @@
-# Starship Minimalist Config for Termux AI
+# Starship Elite Edition - Minimalist & Functional
+add_newline = true
+
 format = """
+$os\
 $directory\
 $git_branch\
 $git_status\
-$character
-"""
+$python\
+$line_break\
+$character"""
+
+[os]
+disabled = false
+style = "bold white"
+
+[os.symbols]
+Android = "󰄛 "
 
 [directory]
-style = "bold cyan"
+style = "bold lavender"
 truncation_length = 3
 truncation_symbol = "…/"
+read_only = " 󰌾"
+home_symbol = "󱂵 "
 
 [character]
-success_symbol = "[❯](bold green)"
-error_symbol = "[❯](bold red)"
+success_symbol = "[󰄾](bold green)"
+error_symbol = "[󰄾](bold red)"
+vimcmd_symbol = "[󰄽](bold yellow)"
 
 [git_branch]
-symbol = " "
-style = "bold lavender"
+symbol = "󰊢 "
+style = "bold subtext0"
+format = "on [$symbol$branch]($style) "
 
 [git_status]
 style = "bold red"
+format = "[[($all_status$ahead_behind)]($style)] "
+
+[python]
+symbol = "󱔎 "
+style = "bold yellow"
+format = "via [$symbol$pyenv_prefix($version )($virtualenv)]($style)"
+
+[line_break]
+disabled = false
+
+[palette]
+lavender = "#b4befe"
+subtext0 = "#a6adc8"

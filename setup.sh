@@ -33,12 +33,15 @@ wget -q --show-progress "$FONT_URL" -O "$FONT_DIR/font.ttf"
 echo "🐚 Mengonfigurasi shell bash..."
 if ! grep -q "starship init bash" ~/.bashrc; then
     echo "" >> ~/.bashrc
-    echo "# Termux AI Setup" >> ~/.bashrc
+    echo "# Termux AI Elite Setup" >> ~/.bashrc
     echo 'eval "$(starship init bash)"' >> ~/.bashrc
     echo "alias ls='eza --icons --group-directories-first'" >> ~/.bashrc
     echo "alias ll='eza -l --icons --group-directories-first'" >> ~/.bashrc
-    echo "alias ai='gemini'" >> ~/.bashrc
+    echo "alias ai='bash ~/termux-ai-setup/scripts/ai-wrapper.sh'" >> ~/.bashrc
 fi
+
+# 6. Memberikan izin pada script
+chmod +x scripts/ai-wrapper.sh
 
 # 6. Instalasi Gemini CLI
 echo "🧠 Menginstal Gemini CLI secara global..."
