@@ -1,22 +1,19 @@
-# Starship Minimalist Config
-format = """$directory$git_branch$character"""
+# Pure Minimalist Starship
+format = "$directory$git_branch$character"
 
 [directory]
-style = "bold blue"
-truncation_length = 3
-truncation_symbol = "…/"
+style = "blue"
+truncation_length = 2
+truncation_symbol = "…"
 
 [git_branch]
-symbol = " "
-style = "bold dim black"
+symbol = " "
+style = "dimmed white"
 format = "[$symbol$branch]($style) "
 
 [character]
-success_symbol = "[❯](bold green)"
-error_symbol = "[❯](bold red)"
-
-[cmd_duration]
-disabled = true
+success_symbol = "[›](bold green)"
+error_symbol = "[›](bold red)"
 
 [package]
 disabled = true
