@@ -1,0 +1,19 @@
+# Pure Minimalist Starship
+format = "$directory$git_branch$character"
+
+[directory]
+style = "blue"
+truncation_length = 2
+truncation_symbol = "…"
+
+[git_branch]
+symbol = " "
+style = "dimmed white"
+format = "[$symbol$branch]($style) "
+
+[character]
+success_symbol = "[›](bold green)"
+error_symbol = "[›](bold red)"
+
+[package]
+disabled = true

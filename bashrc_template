@@ -1,0 +1,34 @@
+# Clean Bashrc
+[[ $- != *i* ]] && return
+
+# Init Starship
+eval "$(starship init bash)"
+
+# Essential Aliases
+alias ..='cd ..'
+alias l='ls -CF --color=auto'
+alias la='ls -A --color=auto'
+alias c='clear'
+alias q='exit'
+alias g='git'
+alias conf='cd ~/.config'
+
+# AI Terminal Handler
+AI_CORE="$HOME/.ai_terminal.py"
+AI_EXEC="$HOME/.ai_execute"
+
+command_not_found_handle() {
+    local out=$($AI_CORE "$*")
+    [[ "$out" == EXEC:* ]] && echo -e "\e[32m›\e[0m ${out#EXEC: }" > "$AI_EXEC"
+    [[ "$out" == CHAT:* ]] && echo -e "\e[34mAI:\e[0m ${out#CHAT: }"
+}
+
+_ai_post() {
+    if [[ -f "$AI_EXEC" ]]; then
+        local cmd=$(cat "$AI_EXEC"); rm "$AI_EXEC"; eval "$cmd"
+    fi
+}
+
+PROMPT_COMMAND="_ai_post;$PROMPT_COMMAND"
+
+clear
