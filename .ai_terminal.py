@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-import sys, subprocess, os
+import sys, subprocess, os, re
+
+# Integrasi Kompresi VoidCore
+sys.path.append(os.path.expanduser("~/.gemini/extensions/voidcore/skills/voidcore/scripts"))
+try:
+    import voidcore_core
+    def compress(text): return voidcore_core.compress(text)
+except ImportError:
+    def compress(text): return text
 
 def main():
     if len(sys.argv) < 2: return
@@ -7,18 +15,13 @@ def main():
     last_cmd = sys.argv[2] if len(sys.argv) > 2 else ""
     last_status = sys.argv[3] if len(sys.argv) > 3 else "0"
     
-    # Prompt untuk Agent Otonom Murni
+    # Kompres goal user untuk hemat token
+    compressed_goal = compress(user_goal)
+    
     prompt = (
-        f"You are a PURE AUTONOMOUS SHELL AGENT.\n"
-        f"Working Dir: {os.getcwd()}\n"
-        f"Last Command: {last_cmd} (Status: {last_status})\n\n"
-        f"USER GOAL: {user_goal}\n\n"
-        f"YOUR RULES:\n"
-        f"1. You execute commands directly to achieve the goal.\n"
-        f"2. Use '&&' to chain multiple operations.\n"
-        f"3. If the goal is a question, answer concisely.\n"
-        f"4. Output ONLY 'EXEC: <bash_command>' or just the direct answer text.\n"
-        f"5. NO MARKDOWN. NO EXPLANATIONS. JUST ACTION."
+        f"Dir: {os.getcwd()}\n"
+        f"LastCmd: {last_cmd} (Status: {last_status})\n"
+        f"Goal: {compressed_goal}"
     )
 
     try:
@@ -28,15 +31,13 @@ def main():
         )
         response = proc.stdout.strip()
         
-        # Filter output untuk mengambil baris eksekusi
         for line in reversed(response.split('\n')):
             if line.startswith("EXEC:"):
                 print(line)
                 return
         
-        # Jika bukan EXEC, maka itu jawaban/chat murni
-        clean_response = " ".join([l for l in response.split('\n') if not l.startswith('[') and l.strip()])
-        print(clean_response)
+        clean = " ".join([l for l in response.split('\n') if not l.startswith('[') and l.strip()])
+        print(clean)
             
     except Exception:
         pass

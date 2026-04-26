@@ -1,47 +1,43 @@
-# --- PURE AI AGENT TERMINAL ---
-
-# Starship Prompt (Keep it for minimal UI)
+# AI-First Terminal Config (Minimalist)
 if command -v starship >/dev/null 2>&1; then
     eval "$(starship init bash)"
 fi
 
-# Core Agent Paths
+# Aliases - Essential Only
+alias cl='clear'
+alias ..='cd ..'
+alias ls='ls -F --color=auto'
+alias reload='source ~/.bashrc'
+alias q='exit'
+
+# AI Terminal Handler
 AI_EXEC_FILE="$HOME/.ai_execute"
 AI_CORE="$HOME/.ai_terminal.py"
-LAST_CMD=""
 
-# Capture every command for context
-trap 'LAST_CMD=$BASH_COMMAND' DEBUG
-
-# Catch-all Handler (The Brain Hook)
 command_not_found_handle() {
-    local status=$?
     local input="$*"
-    
-    # Langsung panggil Agent
-    local output=$($AI_CORE "$input" "$LAST_CMD" "$status")
+    local output=$($AI_CORE "$input")
     
     if [[ "$output" == EXEC:* ]]; then
         local cmd="${output#EXEC: }"
-        echo "$cmd" > "$AI_EXEC_FILE"
-    else
-        echo -e "$output"
+        echo -e "\033[1;32m❯\033[0m $cmd" > "$AI_EXEC_FILE"
+    elif [[ "$output" == CHAT:* ]]; then
+        local text="${output#CHAT: }"
+        echo -e "\033[1;34mAI:\033[0m $text"
     fi
-    return 127
 }
 
-# Pure Autonomous Execution Loop
-ai_agent_loop() {
-    local status=$?
+ai_post_exec() {
     if [ -f "$AI_EXEC_FILE" ]; then
         local cmd=$(cat "$AI_EXEC_FILE")
-        rm -f "$AI_EXEC_FILE"
+        rm "$AI_EXEC_FILE"
         eval "$cmd"
     fi
 }
 
-PROMPT_COMMAND="ai_agent_loop"
+if [[ "$PROMPT_COMMAND" != *ai_post_exec* ]]; then
+    PROMPT_COMMAND="ai_post_exec;$PROMPT_COMMAND"
+fi
 
-# Simple Welcome
+# Clear screen on start for that fresh feel
 clear
-echo -e "\033[1;30m[ PURE AI AGENT MODE ACTIVE ]\033[0m"
