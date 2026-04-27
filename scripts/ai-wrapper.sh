@@ -9,6 +9,7 @@ CYAN='\033[38;5;117m'
 NC='\033[0m'
 
 MEMORY_FILE="$HOME/.gemini_context.log"
+TMP_FILE="/tmp/.ai_raw_$(date +%s)"
 USER_INPUT="$*"
 [ -z "$USER_INPUT" ] && exit 0
 
@@ -29,13 +30,17 @@ CONTEXT=""
 [ -f "$MEMORY_FILE" ] && CONTEXT="[Mem: $(tail -n 3 "$MEMORY_FILE" | tr '\n' ' ')] "
 SYSTEM="[Style: Human Minimalist. Brief. Wrap response to fit narrow terminal.]"
 
-(gemini "${SYSTEM} ${CONTEXT}Input: ${USER_INPUT}" 2>/dev/null > .ai_raw) &
+(gemini "${SYSTEM} ${CONTEXT}Input: ${USER_INPUT}" 2>/dev/null > "$TMP_FILE") &
 GEMINI_PID=$!
 
 spinner $GEMINI_PID
 
-RESPONSE=$(grep -Ev "execution plan|hook command|Hook execution|Expanding hook|Created execution" .ai_raw)
-rm .ai_raw
+if [ -f "$TMP_FILE" ]; then
+    RESPONSE=$(grep -Ev "execution plan|hook command|Hook execution|Expanding hook|Created execution" "$TMP_FILE")
+    rm "$TMP_FILE"
+else
+    RESPONSE="Error: Gagal mendapatkan respon dari Gemini."
+fi
 
 if [ ! -z "$RESPONSE" ]; then
     echo -e "${LAVENDER}󰚩  AI Assistant${NC}"
