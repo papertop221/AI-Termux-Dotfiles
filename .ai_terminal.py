@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 import sys, subprocess, os, re
 
-# Integrasi Kompresi VoidCore
-sys.path.append(os.path.expanduser("~/.gemini/extensions/voidcore/skills/voidcore/scripts"))
-try:
-    import voidcore_core
-    def compress(text): return voidcore_core.compress(text)
-except ImportError:
-    def compress(text): return text
+# Integrasi Kompresi (Fallback)
+def compress(text):
+    # Simple compression: remove double spaces and newlines
+    return " ".join(text.split())
 
 def main():
     if len(sys.argv) < 2: return

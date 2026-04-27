@@ -6,8 +6,9 @@ eval "$(starship init bash)"
 
 # Essential Aliases
 alias ..='cd ..'
-alias l='ls -CF --color=auto'
-alias la='ls -A --color=auto'
+alias ls='eza --icons --group-directories-first'
+alias ll='eza -l --icons --group-directories-first'
+alias l='eza -la --icons --group-directories-first'
 alias c='clear'
 alias q='exit'
 alias g='git'

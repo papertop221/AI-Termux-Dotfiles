@@ -30,13 +30,13 @@ CONTEXT=""
 [ -f "$MEMORY_FILE" ] && CONTEXT="[Mem: $(tail -n 3 "$MEMORY_FILE" | tr '\n' ' ')] "
 SYSTEM="[Style: Human Minimalist. Brief. Wrap response to fit narrow terminal.]"
 
-(gemini "${SYSTEM} ${CONTEXT}Input: ${USER_INPUT}" 2>/dev/null > "$TMP_FILE") &
+(gemini --approval-mode yolo --output-format text "${SYSTEM} ${CONTEXT}Input: ${USER_INPUT}" 2>/dev/null > "$TMP_FILE") &
 GEMINI_PID=$!
 
 spinner $GEMINI_PID
 
 if [ -f "$TMP_FILE" ]; then
-    RESPONSE=$(grep -Ev "execution plan|hook command|Hook execution|Expanding hook|Created execution" "$TMP_FILE")
+    RESPONSE=$(cat "$TMP_FILE")
     rm "$TMP_FILE"
 else
     RESPONSE="Error: Gagal mendapatkan respon dari Gemini."
@@ -55,7 +55,7 @@ if [ ! -z "$RESPONSE" ]; then
     echo -e "${LAVENDER}└─────────────────────────────────────────────────┘${NC}"
     
     echo "U:$USER_INPUT" >> "$MEMORY_FILE"
-    echo "A:$(echo "$RESPONSE" | head -n 1)" >> "$MEMORY_FILE"
+    echo "A:$(echo "$RESPONSE" | tr '\n' ' ' | cut -c1-100)" >> "$MEMORY_FILE"
 fi
 
 if echo "$RESPONSE" | grep -q '```'; then
@@ -63,7 +63,7 @@ if echo "$RESPONSE" | grep -q '```'; then
     read -n 1 -r
     echo
     if [[ "$REPLY" =~ ^[yY]$ ]]; then
-        CMD=$(echo "$RESPONSE" | sed -n '/```/,/```/p' | grep -v '```' | head -n 1)
-        eval "$CMD"
+        CMD=$(echo "$RESPONSE" | sed -n '/```/,/```/ { /```/ d; p; }' | head -n 1)
+        [ ! -z "$CMD" ] && eval "$CMD"
     fi
 fi
