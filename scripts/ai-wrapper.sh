@@ -9,7 +9,7 @@ CYAN='\033[38;5;117m'
 NC='\033[0m'
 
 MEMORY_FILE="$HOME/.gemini_context.log"
-TMP_FILE="/tmp/.ai_raw_$(date +%s)"
+TMP_FILE="$HOME/.ai_tmp_raw"
 USER_INPUT="$*"
 [ -z "$USER_INPUT" ] && exit 0
 
